@@ -1,37 +1,45 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Users } from "lucide-react";
+import { ArrowUpRight, Copy, Plus, Users } from "lucide-react";
 import { FinishedList, RankingReveal } from "./Leaderboard";
 import { Rules } from "./QuestionCard";
 import { post, useRoom } from "./useRoom";
-
-const STATUS_LABEL: Record<string, string> = { LOBBY: "Phòng chờ", PLAYING: "Đang chơi" };
+import styles from "./arena.module.css";
 
 export function CreateRoom() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
   return (
-    <div className="mx-auto max-w-md space-y-4 px-4 py-20 text-center">
-      <h1 className="text-3xl font-bold">Host · Risk &amp; Reward</h1>
-      <button
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            const { code } = await post("/api/rooms", {});
-            router.replace(`/game/host?code=${code}`);
-          } catch (e) {
-            setErr((e as Error).message);
-            setBusy(false);
-          }
-        }}
-        className="rounded-xl bg-brand px-6 py-3 font-semibold text-white disabled:opacity-50"
-      >
-        {busy ? "Đang tạo…" : "Tạo phòng mới"}
-      </button>
-      {err && <p className="text-brand">{err}</p>}
+    <div className={styles.arena}>
+      <div className={styles.formShell}>
+        <div className={styles.formPanel}>
+          <div className={styles.createIcon}><Plus size={32} /></div>
+          <h1>Tạo đấu trường</h1>
+          <p className={styles.formLead}>Mở phòng, chia sẻ mã cho mọi người và bắt đầu khi tất cả đã sẵn sàng.</p>
+          <button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                const { code } = await post("/api/rooms", {});
+                router.replace(`/game/host?code=${code}`);
+              } catch (e) {
+                setErr((e as Error).message);
+                setBusy(false);
+              }
+            }}
+            className={`${styles.buttonPrimary} ${styles.buttonFull}`}
+          >
+            {busy ? "Đang tạo…" : <>Tạo phòng mới <ArrowUpRight size={18} /></>}
+          </button>
+          {err && <p className={styles.error} role="alert">{err}</p>}
+          <Link href="/game" className={styles.backLink}>Quay lại giới thiệu</Link>
+        </div>
+      </div>
     </div>
   );
 }
@@ -41,10 +49,11 @@ export function HostDashboard({ code }: { code: string }) {
   const { state, error, refresh } = useRoom(code, true);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  if (error) return <p className="p-10 text-center">{error}</p>;
-  if (!state) return <p className="p-10 text-center">Đang tải…</p>;
-  if (!state.isHost) return <p className="p-10 text-center">Bạn không phải host của phòng {code}.</p>;
+  if (error) return <Message>{error}</Message>;
+  if (!state) return <Message>Đang tải phòng chơi…</Message>;
+  if (!state.isHost) return <Message>Bạn không phải người tạo phòng {code}.</Message>;
 
   const { status, counts } = state;
   const start = async () => {
@@ -60,65 +69,63 @@ export function HostDashboard({ code }: { code: string }) {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 px-6 py-6">
-      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-navy px-6 py-4 text-white">
-        <div>
-          <p className="text-xs uppercase opacity-70">Mã phòng · vào /game/join</p>
-          <p className="font-mono text-5xl font-bold tracking-widest text-gold">{code}</p>
-        </div>
-        <div className="flex gap-8 text-center">
-          <Stat label="Người chơi" value={counts.players} />
-          <Stat label="Đã xong" value={status === "LOBBY" ? "—" : `${counts.finished}/${counts.players}`} />
-        </div>
-        <span className="rounded-full bg-white/10 px-3 py-1 text-sm">{STATUS_LABEL[status]}</span>
-      </header>
-
-      {msg && <p className="rounded-lg bg-red-50 px-3 py-2 text-brand">{msg}</p>}
-
-      {status === "LOBBY" && (
-        <button disabled={busy} onClick={start} className="rounded-xl bg-brand px-5 py-2.5 font-semibold text-white disabled:opacity-50">
-          Bắt đầu game
-        </button>
-      )}
-
-      {status === "LOBBY" && (
-        <div className="grid gap-6 md:grid-cols-2">
-          <Rules />
-          <div className="space-y-2">
-            <h2 className="flex items-center gap-2 font-semibold">
-              <Users size={18} /> Đã vào phòng ({counts.players})
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {state.leaderboard.map((p) => (
-                <span key={p.id} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm">
-                  {p.nickname}
-                </span>
-              ))}
-            </div>
+    <div className={styles.arena}>
+      <div className={styles.hostShell}>
+        <div className={styles.hostHero}>
+          <div className={styles.hostCode}>
+            <span className={styles.eyebrow}>{status === "LOBBY" ? "Phòng chờ đang mở" : "Cuộc chơi đang diễn ra"}</span>
+            <h1>{code}</h1>
+            <p>Mã phòng · người chơi vào trang /game/join để tham gia</p>
+            <button
+              className={styles.inviteButton}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(`${window.location.origin}/game/join?code=${code}`);
+                  setCopied(true);
+                } catch {
+                  setMsg("Không sao chép được link. Hãy gửi mã phòng cho người chơi.");
+                }
+              }}
+            ><Copy size={14} /> {copied ? "Đã sao chép link mời" : "Sao chép link mời"}</button>
+          </div>
+          <div className={styles.hostStats}>
+            <div className={styles.hostStat}><strong>{counts.players}</strong><span>Người chơi</span></div>
+            <div className={styles.hostStat}><strong>{status === "LOBBY" ? "—" : counts.finished}</strong><span>Đã về đích</span></div>
           </div>
         </div>
-      )}
 
-      {status === "PLAYING" && (
-        <div className="space-y-8">
-          <section className="space-y-2">
-            <h2 className="font-semibold">
-              Đã hoàn thành ({counts.finished}/{counts.players})
-            </h2>
-            <FinishedList rows={state.leaderboard} />
-          </section>
-          <RankingReveal rows={state.leaderboard} total={state.total} />
-        </div>
-      )}
+        {msg && <p className={styles.error} role="alert">{msg}</p>}
+        {status === "LOBBY" ? (
+          <div className={styles.hostSection}>
+            <div className={styles.hostSectionHead}>
+              <h2><Users size={20} style={{ display: "inline", marginRight: 9 }} /> Sẵn sàng xuất phát</h2>
+              <button disabled={busy} onClick={start} className={styles.buttonPrimary}>Bắt đầu game <ArrowUpRight size={18} /></button>
+            </div>
+            <div className={styles.hostGrid}>
+              <div className={styles.panel} style={{ padding: 25 }}>
+                <p className={styles.stageKicker}>NGƯỜI CHƠI TRONG PHÒNG ({counts.players})</p>
+                <div className={styles.playerPills} style={{ marginTop: 18 }}>
+                  {state.leaderboard.length ? state.leaderboard.map((p) => <span key={p.id}>{p.nickname}</span>) : <p className={styles.empty}>Đang chờ người chơi đầu tiên…</p>}
+                </div>
+              </div>
+              <Rules />
+            </div>
+          </div>
+        ) : (
+          <div className={styles.hostSection}>
+            <div className={styles.hostSectionHead}><h2>Đường đua đang nóng lên</h2></div>
+            <div className={styles.panel} style={{ padding: 25 }}>
+              <p className={styles.stageKicker}>ĐÃ HOÀN THÀNH {counts.finished}/{counts.players}</p>
+              <div style={{ marginTop: 16 }}><FinishedList rows={state.leaderboard} /></div>
+            </div>
+            <RankingReveal rows={state.leaderboard} total={state.total} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="font-mono text-2xl font-bold">{value}</p>
-      <p className="text-xs opacity-70">{label}</p>
-    </div>
-  );
+function Message({ children }: { children: React.ReactNode }) {
+  return <div className={styles.arena}><div className={styles.centerMessage}>{children}</div></div>;
 }

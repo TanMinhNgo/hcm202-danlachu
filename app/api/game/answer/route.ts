@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   if (body.answer !== null && !["A", "B", "C", "D"].includes(body.answer)) return fail("Đáp án không hợp lệ");
 
   const round = await PlayerRound.findOne({ roomId: room._id, playerId: player._id, questionNumber: player.current }).lean();
-  if (!round) return fail("Bạn chưa cược câu này", 409);
+  if (!round) return fail("Bạn chưa chọn mức điểm cho câu này", 409);
   if (round.isCorrect !== null) return fail("Bạn đã trả lời câu này", 409);
 
   const elapsed = Date.now() - round.shownAt.getTime();

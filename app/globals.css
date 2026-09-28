@@ -2,13 +2,57 @@
 
 @theme inline {
   --font-sans: var(--font-be-vietnam);
-  --color-paper: #f8fafc;
-  --color-navy: #14213d;
-  --color-brand: #b91c1c;
-  --color-gold: #d4a017;
+  --color-paper: #f8f5ed;
+  --color-navy: #402226;
+  --color-brand: #9f262c;
+  --color-gold: #c38d2b;
+  --color-ink: #2a2523;
+  --color-jade: #356b68;
+  --color-slate-200: #e3d7c5;
+  --color-slate-300: #d2c0aa;
+  --color-slate-500: #756b64;
+  --color-slate-600: #675d57;
+  --color-slate-700: #493f39;
 }
 
-body {
-  background: var(--color-paper);
-  color: var(--color-navy);
+:root {
+  --surface: #fffdf8;
+  --surface-soft: #f2ebdf;
+  --border: #e3d7c5;
+  --text-muted: #675d57;
+  --brand-dark: #7b1d24;
+  --gold-light: #e9c779;
+}
+
+html { scroll-behavior: smooth; }
+body { min-width: 320px; background: var(--color-paper); color: var(--color-ink); }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+::selection { background: #e9c779; color: #402226; }
+:where(a, button, input):focus-visible { outline: 3px solid var(--color-gold); outline-offset: 3px; }
+
+.site-nav { position: relative; z-index: 10; border-bottom: 1px solid var(--border); background: var(--surface); }
+.site-nav-inner { display: flex; max-width: 1180px; min-height: 76px; align-items: center; gap: 28px; margin: auto; padding: 12px 28px; }
+.site-brand { flex: none; color: var(--color-navy); font-size: 15px; font-weight: 700; letter-spacing: -.025em; white-space: nowrap; }
+.site-links { display: flex; flex: 1; align-items: center; justify-content: center; gap: clamp(15px, 2.2vw, 30px); }
+.site-links a { color: var(--text-muted); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.site-links a:hover, .site-brand:hover { color: var(--color-brand); }
+.site-join { flex: none; border-radius: 8px; background: var(--color-brand); padding: 10px 15px; color: white; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.site-join:hover { background: var(--brand-dark); }
+
+@media (max-width: 760px) {
+  .site-nav-inner { flex-wrap: wrap; gap: 10px 16px; padding: 12px 18px 0; }
+  .site-brand { flex: 1; }
+  .site-join { padding: 8px 12px; }
+  .site-links { order: 3; flex: 0 0 100%; justify-content: flex-start; gap: 24px; overflow-x: auto; padding: 9px 0 13px; scrollbar-width: thin; }
+}
+
+@media (max-width: 380px) {
+  .site-brand { font-size: 13px; }
+  .site-join { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }

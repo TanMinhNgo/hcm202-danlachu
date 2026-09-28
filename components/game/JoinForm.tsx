@@ -1,7 +1,9 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { post } from "./useRoom";
+import styles from "./arena.module.css";
 
 export function JoinForm({ initialCode }: { initialCode: string }) {
   const router = useRouter();
@@ -9,8 +11,10 @@ export function JoinForm({ initialCode }: { initialCode: string }) {
   const [busy, setBusy] = useState(false);
 
   return (
+    <div className={styles.arena}>
+    <div className={styles.formShell}>
     <form
-      className="mx-auto max-w-sm space-y-4 px-4 py-16"
+      className={styles.formPanel}
       onSubmit={async (e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
@@ -25,25 +29,31 @@ export function JoinForm({ initialCode }: { initialCode: string }) {
         }
       }}
     >
-      <h1 className="text-center text-2xl font-bold">Tham gia game</h1>
-      <label className="block">
-        <span className="text-sm font-medium">Mã phòng</span>
+      <p className={styles.eyebrow}>Bước vào đấu trường</p>
+      <h1>Tham gia phòng chơi</h1>
+      <p className={styles.formLead}>Nhập mã phòng từ người tạo để bắt đầu cuộc đua kiến thức.</p>
+      <label className={styles.field}>
+        <span>Mã phòng</span>
         <input
           name="code"
           required
           defaultValue={initialCode}
           autoComplete="off"
-          className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-2xl uppercase tracking-widest"
+          placeholder="VD: ABC123"
+          className={styles.codeInput}
         />
       </label>
-      <label className="block">
-        <span className="text-sm font-medium">Nickname</span>
-        <input name="nickname" required maxLength={20} className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-lg" />
+      <label className={styles.field}>
+        <span>Tên hiển thị</span>
+        <input name="nickname" required maxLength={20} placeholder="Tên của bạn" />
       </label>
-      {err && <p className="text-sm text-brand">{err}</p>}
-      <button disabled={busy} className="w-full rounded-xl bg-brand py-3 font-semibold text-white disabled:opacity-50">
-        {busy ? "Đang vào…" : "Join Game"}
+      {err && <p className={styles.error} role="alert">{err}</p>}
+      <button disabled={busy} className={`${styles.buttonPrimary} ${styles.buttonFull}`}>
+        {busy ? "Đang vào…" : "Vào đấu trường"}
       </button>
+      <Link href="/game" className={styles.backLink}>Xem luật chơi trước</Link>
     </form>
+    </div>
+    </div>
   );
 }

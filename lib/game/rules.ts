@@ -1,4 +1,4 @@
-// Luật Risk & Reward — logic thuần, chỉ chạy trên server. Kiểm tra: `node lib/game/rules.test.ts`.
+// Luật mini game — logic thuần, chỉ chạy trên server. Kiểm tra: `node lib/game/rules.test.ts`.
 
 export const START_SCORE = 100;
 export const ANSWER_SECONDS = 15;
@@ -17,7 +17,7 @@ export function isValidBet(bet: unknown, isFinal: boolean, score: number): bet i
   return typeof bet === "number" && allowedBets(isFinal, score).includes(bet);
 }
 
-/** Đúng: +cược. Sai: −nửa cược. Ngôi sao hi vọng: đúng +2×cược, sai −2×cược. */
+/** Đúng: cộng mức điểm đã chọn. Sai: trừ một nửa. Ngôi sao hi vọng nhân đôi mức cộng/trừ. */
 export const scoreChange = (isCorrect: boolean, bet: number, star = false) =>
   star ? (isCorrect ? 2 * bet : -2 * bet) : isCorrect ? bet : -Math.ceil(bet / 2);
 export const applyScore = (score: number, change: number) => Math.max(0, score + change);
