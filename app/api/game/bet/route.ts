@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const { code, room, player } = ctx;
 
   if (room.status !== "BETTING") return fail("Chưa mở / đã đóng cược", 409);
-  const q = getQuestion(room.currentQuestion);
+  const q = getQuestion(String(room._id), room.currentQuestion);
   if (!isValidBet(body.bet, q.isFinalRound, player.score)) return fail("Mức cược không hợp lệ");
 
   try {

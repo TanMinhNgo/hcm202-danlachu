@@ -16,7 +16,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/rooms/[roomCode
   const [hostHash, playerHash] = await Promise.all([sessionHash(hostCookie(code)), sessionHash(playerCookie(code))]);
   const isHost = hostHash === room.hostSessionHash;
   const n = room.currentQuestion;
-  const q = n ? getQuestion(n) : null;
+  const q = n ? getQuestion(String(room._id), n) : null;
 
   const [players, rounds] = await Promise.all([
     Player.find({ roomId: room._id }).lean(),

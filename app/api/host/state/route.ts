@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 }
 
 async function scoreRound(roomId: Types.ObjectId, n: number) {
-  const q = getQuestion(n);
+  const q = getQuestion(String(roomId), n);
 
   // Lưu hạng trước khi chấm để bảng xếp hạng hiện ↑↓.
   const players = await Player.find({ roomId, isSpectator: false }, { nickname: 1, score: 1 }).lean();
