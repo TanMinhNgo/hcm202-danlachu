@@ -1,8 +1,8 @@
 import type { OptionKey } from "@/lib/data/questions";
-import type { RoomState } from "./useRoom";
+import type { QuestionView } from "./useRoom";
 
 type Props = {
-  question: NonNullable<RoomState["question"]>;
+  question: QuestionView;
   selected?: OptionKey | null;
   correct?: OptionKey | null;
   onPick?: (key: OptionKey) => void;
@@ -52,19 +52,16 @@ export function Rules() {
       <div>
         <h3 className="font-semibold">Mỗi vòng</h3>
         <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-slate-700">
-          <li>Xem chủ đề câu hỏi.</li>
+          <li>Xem chủ đề câu hỏi, chọn mức cược: <b>10 / 20 / 30</b>.</li>
           <li>
-            Chọn mức cược: <b>10 / 20 / 30</b>.
+            Câu hỏi xuất hiện — trả lời trong <b>15 giây</b> (hết giờ tính là sai).
           </li>
-          <li>Câu hỏi xuất hiện.</li>
-          <li>
-            Trả lời trong <b>15 giây</b>.
-          </li>
+          <li>Xem đáp án, bấm <b>Tiếp tục</b> sang câu sau — mỗi người tự chơi theo tốc độ riêng.</li>
           <li>
             Đúng: <b>+ số điểm đã cược</b>.
           </li>
           <li>
-            Sai: <b>- số điểm đã cược</b>.
+            Sai: <b>- một nửa số điểm đã cược</b>.
           </li>
           <li>
             Điểm tối thiểu là <b>0</b>.
@@ -72,11 +69,21 @@ export function Rules() {
         </ol>
       </div>
       <div>
+        <h3 className="font-semibold">⭐ Ngôi sao hi vọng</h3>
+        <p className="text-slate-700">
+          Mỗi người có <b>2 lần</b>, bật khi chọn mức cược. Đúng: <b>+ gấp đôi</b> số điểm cược. Sai:{" "}
+          <b>- gấp đôi</b> số điểm cược.
+        </p>
+      </div>
+      <div>
         <h3 className="font-semibold">Final Round</h3>
         <p className="text-slate-700">
           Câu 15 cho phép cược tối đa <b>50 points</b> (không vượt quá điểm hiện có).
         </p>
       </div>
+      <p className="text-slate-700">
+        Xếp hạng theo <b>điểm</b>; bằng điểm thì ai có <b>tổng thời gian trả lời</b> ít hơn đứng trên.
+      </p>
       <p className="border-t border-slate-200 pt-3 text-center text-sm font-semibold text-brand">
         Hiểu kiến thức · Đánh giá rủi ro · Leo bảng xếp hạng
       </p>

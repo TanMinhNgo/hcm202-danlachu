@@ -1,21 +1,12 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Timer, Users } from "lucide-react";
-import type { HostAction } from "@/lib/game/rules";
-import { AnswerReveal, Leaderboard, Podium } from "./Leaderboard";
-import { QuestionCard, Rules } from "./QuestionCard";
-import { post, useCountdown, useRoom } from "./useRoom";
+import { Users } from "lucide-react";
+import { FinishedList, RankingReveal } from "./Leaderboard";
+import { Rules } from "./QuestionCard";
+import { post, useRoom } from "./useRoom";
 
-const STATUS_LABEL: Record<string, string> = {
-  LOBBY: "Phòng chờ",
-  BETTING: "Đang cược",
-  QUESTION: "Đang trả lời",
-  ANSWER_LOCKED: "Đã khoá trả lời",
-  REVEAL: "Công bố đáp án",
-  LEADERBOARD: "Bảng xếp hạng",
-  FINISHED: "Kết thúc",
-};
+const STATUS_LABEL: Record<string, string> = { LOBBY: "Phòng chờ", PLAYING: "Đang chơi" };
 
 export function CreateRoom() {
   const router = useRouter();
@@ -45,9 +36,9 @@ export function CreateRoom() {
   );
 }
 
+// Host chỉ tạo phòng, bấm bắt đầu và theo dõi bảng xếp hạng — không hiện câu hỏi.
 export function HostDashboard({ code }: { code: string }) {
-  const { state, error, refresh, serverNow } = useRoom(code, true);
-  const left = useCountdown(state?.status === "QUESTION" ? state.answerDeadlineAt : null, serverNow);
+  const { state, error, refresh } = useRoom(code, true);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -55,31 +46,18 @@ export function HostDashboard({ code }: { code: string }) {
   if (!state) return <p className="p-10 text-center">Đang tải…</p>;
   if (!state.isHost) return <p className="p-10 text-center">Bạn không phải host của phòng {code}.</p>;
 
-  const { status, question, counts } = state;
-  const isLast = state.currentQuestion >= state.total;
-
-  const act = async (action: HostAction) => {
-    if (action === "end" && !confirm("Kết thúc game ngay?")) return;
+  const { status, counts } = state;
+  const start = async () => {
     setBusy(true);
     setMsg(null);
     try {
-      await post("/api/host/state", { code, action });
+      await post("/api/host/state", { code, action: "start" });
     } catch (e) {
       setMsg((e as Error).message);
     }
     await refresh();
     setBusy(false);
   };
-  const btn = (action: HostAction, children: React.ReactNode, primary = false) => (
-    <button
-      key={action}
-      disabled={busy}
-      onClick={() => act(action)}
-      className={`rounded-xl px-5 py-2.5 font-semibold disabled:opacity-50 ${primary ? "bg-brand text-white" : "border border-navy"}`}
-    >
-      {children}
-    </button>
-  );
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-6 py-6">
@@ -90,26 +68,18 @@ export function HostDashboard({ code }: { code: string }) {
         </div>
         <div className="flex gap-8 text-center">
           <Stat label="Người chơi" value={counts.players} />
-          {counts.spectators > 0 && <Stat label="Khán giả" value={counts.spectators} />}
-          <Stat label="Câu" value={state.currentQuestion ? `${state.currentQuestion}/${state.total}` : "—"} />
-          <Stat label="Đã cược" value={status === "LOBBY" ? "—" : counts.bets} />
-          <Stat label="Đã trả lời" value={status === "LOBBY" || status === "BETTING" ? "—" : counts.answers} />
+          <Stat label="Đã xong" value={status === "LOBBY" ? "—" : `${counts.finished}/${counts.players}`} />
         </div>
         <span className="rounded-full bg-white/10 px-3 py-1 text-sm">{STATUS_LABEL[status]}</span>
       </header>
 
       {msg && <p className="rounded-lg bg-red-50 px-3 py-2 text-brand">{msg}</p>}
 
-      <div className="flex flex-wrap gap-3">
-        {status === "LOBBY" && btn("start", "Bắt đầu game", true)}
-        {status === "BETTING" && btn("showQuestion", "Hiện câu hỏi", true)}
-        {status === "QUESTION" && btn("lock", "Khoá trả lời")}
-        {(status === "QUESTION" || status === "ANSWER_LOCKED") && btn("reveal", "Công bố đáp án", true)}
-        {status === "REVEAL" && btn("leaderboard", "Xem bảng xếp hạng")}
-        {(status === "REVEAL" || status === "LEADERBOARD") &&
-          btn("next", isLast ? "Kết thúc & xem Top 3" : "Câu tiếp theo", true)}
-        {status !== "FINISHED" && status !== "LOBBY" && btn("end", "Kết thúc game")}
-      </div>
+      {status === "LOBBY" && (
+        <button disabled={busy} onClick={start} className="rounded-xl bg-brand px-5 py-2.5 font-semibold text-white disabled:opacity-50">
+          Bắt đầu game
+        </button>
+      )}
 
       {status === "LOBBY" && (
         <div className="grid gap-6 md:grid-cols-2">
@@ -129,40 +99,15 @@ export function HostDashboard({ code }: { code: string }) {
         </div>
       )}
 
-      {status === "BETTING" && question && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-          <p className="text-slate-500">Câu {question.orderNumber}</p>
-          <p className="text-4xl font-bold">{question.category}</p>
-          {question.isFinalRound && <p className="mt-2 text-xl font-bold text-brand">FINAL ROUND · cược tối đa 50</p>}
-          <p className="mt-4 text-slate-600">
-            Người chơi đang chọn mức cược… ({counts.bets}/{counts.players})
-          </p>
-        </div>
-      )}
-
-      {(status === "QUESTION" || status === "ANSWER_LOCKED" || status === "REVEAL") && question?.options && (
-        <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-8">
-          <div className="flex justify-between text-slate-500">
-            <span>
-              Câu {question.orderNumber} · {question.category}
-            </span>
-            {status === "QUESTION" && (
-              <span className={`flex items-center gap-1 font-mono text-3xl font-bold ${left <= 5 ? "text-brand" : "text-navy"}`}>
-                <Timer /> {left}s
-              </span>
-            )}
-          </div>
-          <QuestionCard question={question} correct={state.reveal?.correctAnswer} large />
-          {status === "REVEAL" && <AnswerReveal state={state} />}
-        </div>
-      )}
-
-      {status === "LEADERBOARD" && <Leaderboard rows={state.leaderboard} limit={10} />}
-
-      {status === "FINISHED" && (
+      {status === "PLAYING" && (
         <div className="space-y-8">
-          <Podium rows={state.leaderboard} />
-          <Leaderboard rows={state.leaderboard} />
+          <section className="space-y-2">
+            <h2 className="font-semibold">
+              Đã hoàn thành ({counts.finished}/{counts.players})
+            </h2>
+            <FinishedList rows={state.leaderboard} />
+          </section>
+          <RankingReveal rows={state.leaderboard} total={state.total} />
         </div>
       )}
     </div>

@@ -61,6 +61,6 @@ export async function loadPlayer(rawCode: unknown) {
   const h = await sessionHash(playerCookie(code));
   const player = h ? await Player.findOne({ roomId: room._id, sessionHash: h }).lean() : null;
   if (!player) return fail("Bạn chưa tham gia phòng này", 401);
-  if (player.isSpectator) return fail("Bạn đang ở chế độ khán giả", 403);
+  if (room.status !== "PLAYING") return fail("Host chưa bắt đầu game", 409);
   return { code, room, player };
 }

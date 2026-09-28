@@ -232,4 +232,38 @@ export const QUESTIONS: Question[] = [
 ];
 
 export const TOTAL_QUESTIONS = QUESTIONS.length;
-export const getQuestion = (n: number) => QUESTIONS[n - 1];
+
+// PRNG có seed: mọi serverless instance tính ra cùng một thứ tự cho cùng một phòng.
+function seeded(seed: string) {
+  let h = 2166136261;
+  for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return () => {
+    h = (h + 0x6d2b79f5) | 0;
+    let t = Math.imul(h ^ (h >>> 15), 1 | h);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffle<T>(arr: T[], rand: () => number) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const KEYS: OptionKey[] = ["A", "B", "C", "D"];
+
+/** Câu thứ n của phòng `seed`: xáo thứ tự câu (final round luôn cuối) và vị trí đáp án đúng chia đều A/B/C/D. */
+export function getQuestion(seed: string, n: number): Question {
+  const rand = seeded(seed);
+  const order = [...shuffle(QUESTIONS.slice(0, -1), rand), QUESTIONS[QUESTIONS.length - 1]];
+  const slots = shuffle(QUESTIONS.map((_, i) => KEYS[i % 4]), rand); // 4A 4B 4C 3D
+  const q = order[n - 1];
+  const correct = q.options.find((o) => o.key === q.correctAnswer)!.text;
+  const texts = shuffle(q.options.filter((o) => o.key !== q.correctAnswer).map((o) => o.text), rand);
+  texts.splice(KEYS.indexOf(slots[n - 1]), 0, correct);
+  return { ...q, orderNumber: n, options: texts.map((text, i) => ({ key: KEYS[i], text })), correctAnswer: slots[n - 1] };
+}

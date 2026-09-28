@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { useState } from "react";
 import { BookOpen, CheckCircle2 } from "lucide-react";
-import type { LeaderRow, RoomState } from "./useRoom";
+import type { OptionKey } from "@/lib/data/questions";
+import { formatTime, type LeaderRow, type QuestionView } from "./useRoom";
 
-export function Leaderboard({ rows, meId, limit }: { rows: LeaderRow[]; meId?: string; limit?: number }) {
+export function Leaderboard({ rows, meId, limit, total }: { rows: LeaderRow[]; meId?: string; limit?: number; total: number }) {
   const shown = limit ? rows.slice(0, limit) : rows;
   if (!rows.length) return <p className="text-sm text-slate-500">Chưa có người chơi.</p>;
   return (
@@ -14,13 +16,50 @@ export function Leaderboard({ rows, meId, limit }: { rows: LeaderRow[]; meId?: s
         >
           <span className="w-7 font-mono text-slate-500">{r.rank}</span>
           <span className="flex-1 truncate">{r.nickname}</span>
-          <span className="w-10 text-right font-mono text-xs">
-            {r.change > 0 ? <span className="text-emerald-600">↑{r.change}</span> : r.change < 0 ? <span className="text-brand">↓{-r.change}</span> : <span className="text-slate-400">—</span>}
+          <span className="w-12 text-right font-mono text-xs text-slate-500">
+            {r.answered >= total ? "✓" : `${r.answered}/${total}`}
           </span>
+          <span className="w-16 text-right font-mono text-xs text-slate-500">{formatTime(r.timeMs)}</span>
           <span className="w-14 text-right font-mono font-semibold">{r.score}</span>
         </li>
       ))}
     </ol>
+  );
+}
+
+/** Người đã làm xong, theo thứ tự hoàn thành — chưa lộ điểm để giữ hồi hộp. */
+export function FinishedList({ rows }: { rows: LeaderRow[] }) {
+  const done = rows.filter((r) => r.finishedAt).sort((a, b) => a.finishedAt! - b.finishedAt!);
+  if (!done.length) return <p className="text-sm text-slate-500">Chưa có ai hoàn thành.</p>;
+  return (
+    <ol className="flex flex-wrap gap-2">
+      {done.map((r, i) => (
+        <li key={r.id} className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-sm">
+          <span className="font-mono text-slate-500">{i + 1}.</span> {r.nickname}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Nút bấm mới hiện Top 3 + bảng xếp hạng đầy đủ. */
+export function RankingReveal({ rows, total, meId }: { rows: LeaderRow[]; total: number; meId?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-8">
+      <button
+        onClick={() => setOpen(!open)}
+        className="mx-auto block rounded-xl bg-brand px-6 py-3 text-lg font-semibold text-white"
+      >
+        {open ? "Ẩn bảng xếp hạng" : "Xem bảng xếp hạng"}
+      </button>
+      {open && (
+        <>
+          <Podium rows={rows} />
+          <Leaderboard rows={rows} total={total} meId={meId} />
+        </>
+      )}
+    </div>
   );
 }
 
@@ -38,7 +77,7 @@ export function Podium({ rows }: { rows: LeaderRow[] }) {
         return (
           <div key={place} className="flex w-28 flex-col items-center gap-1">
             <span className="w-full truncate text-center font-semibold">{p?.nickname ?? "—"}</span>
-            <span className="font-mono text-sm">{p?.score ?? ""}</span>
+            <span className="font-mono text-sm">{p ? `${p.score} · ${formatTime(p.timeMs)}` : ""}</span>
             <div className={`${h} ${tone} flex w-full items-start justify-center rounded-t-lg pt-2 text-2xl font-bold text-navy`}>
               {place}
             </div>
@@ -49,10 +88,10 @@ export function Podium({ rows }: { rows: LeaderRow[] }) {
   );
 }
 
-export function AnswerReveal({ state }: { state: RoomState }) {
-  const { reveal, question } = state;
-  if (!reveal || !question?.options) return null;
-  const correct = question.options.find((o) => o.key === reveal.correctAnswer);
+type Reveal = { correctAnswer: OptionKey; explanation: string; source: string; knowledgeSection: string };
+
+export function AnswerReveal({ reveal, question }: { reveal: Reveal; question: QuestionView }) {
+  const correct = question.options?.find((o) => o.key === reveal.correctAnswer);
   return (
     <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
       <p className="flex items-center gap-2 text-sm font-bold tracking-wide text-emerald-700">
