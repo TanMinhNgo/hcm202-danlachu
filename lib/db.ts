@@ -1,5 +1,5 @@
 import mongoose, { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
-import { START_SCORE } from "./game/rules";
+import { STARS, START_SCORE } from "./game/rules";
 
 // Kết nối cache trên globalThis để hot reload / serverless không mở kết nối mới mỗi request.
 const g = globalThis as unknown as { _mongoose?: Promise<typeof mongoose> };
@@ -18,11 +18,7 @@ const roomSchema = new Schema(
   {
     code: { type: String, required: true, unique: true },
     status: { type: String, required: true, default: "LOBBY" },
-    currentQuestion: { type: Number, default: 0 },
     hostSessionHash: { type: String, required: true },
-    bettingStartedAt: { type: Date, default: null },
-    questionStartedAt: { type: Date, default: null },
-    answerDeadlineAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
@@ -32,10 +28,12 @@ const playerSchema = new Schema({
   nickname: { type: String, required: true },
   sessionHash: { type: String, required: true },
   score: { type: Number, default: START_SCORE },
-  isSpectator: { type: Boolean, default: false },
+  starsLeft: { type: Number, default: STARS },
+  current: { type: Number, default: 1 }, // câu người này đang làm; > tổng số câu = đã xong
+  timeMs: { type: Number, default: 0 }, // tổng thời gian trả lời, dùng xếp hạng khi bằng điểm
+  finishedAt: { type: Date, default: null }, // lúc làm xong câu cuối → thứ tự hiện trong danh sách "đã hoàn thành"
   joinedAt: { type: Date, default: Date.now },
   lastSeenAt: { type: Date, default: Date.now },
-  previousRank: { type: Number, default: null },
 });
 playerSchema.index({ roomId: 1, nickname: 1 }, { unique: true, collation: { locale: "vi", strength: 2 } });
 playerSchema.index({ roomId: 1, score: -1 });
@@ -46,12 +44,12 @@ const playerRoundSchema = new Schema(
     playerId: { type: Schema.Types.ObjectId, required: true },
     questionNumber: { type: Number, required: true },
     bet: { type: Number, default: null },
+    star: { type: Boolean, default: false },
     answer: { type: String, default: null },
     isCorrect: { type: Boolean, default: null },
     scoreChange: { type: Number, default: null },
     responseTimeMs: { type: Number, default: null },
-    betSubmittedAt: { type: Date, default: null },
-    answerSubmittedAt: { type: Date, default: null },
+    shownAt: { type: Date, required: true }, // câu hỏi hiện ngay khi cược → mốc 15s của riêng người này
   },
   { timestamps: true },
 );
@@ -59,8 +57,11 @@ const playerRoundSchema = new Schema(
 playerRoundSchema.index({ roomId: 1, playerId: 1, questionNumber: 1 }, { unique: true });
 playerRoundSchema.index({ roomId: 1, questionNumber: 1 });
 
-const getModel = <S extends Schema>(name: string, schema: S) =>
-  (models[name] as Model<InferSchemaType<S>>) || model(name, schema);
+// Hot reload chạy lại file này: đăng ký lại model để schema mới có hiệu lực (model cũ giữ schema cũ → thiếu field).
+const getModel = <S extends Schema>(name: string, schema: S) => {
+  if (models[name]) mongoose.deleteModel(name);
+  return model(name, schema) as Model<InferSchemaType<S>>;
+};
 
 export const Room = getModel("Room", roomSchema);
 export const Player = getModel("Player", playerSchema);

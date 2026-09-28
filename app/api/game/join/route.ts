@@ -16,11 +16,10 @@ export async function POST(req: Request) {
   const existing = await sessionHash(playerCookie(code));
   if (existing && (await Player.exists({ roomId: room._id, sessionHash: existing }))) return Response.json({ code });
 
-  if (room.status === "FINISHED") return fail("Game đã kết thúc", 409);
   const token = await newSession(playerCookie(code));
   try {
-    // Vào sau khi game bắt đầu → Spectator Mode.
-    await Player.create({ roomId: room._id, nickname, sessionHash: token, isSpectator: room.status !== "LOBBY" });
+    // Vào muộn vẫn chơi được: mỗi người tự tính giờ riêng.
+    await Player.create({ roomId: room._id, nickname, sessionHash: token });
   } catch (e) {
     if ((e as { code?: number }).code === 11000) return fail("Nickname đã có người dùng trong phòng", 409);
     throw e;

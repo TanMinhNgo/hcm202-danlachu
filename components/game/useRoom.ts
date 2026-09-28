@@ -3,38 +3,41 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { OptionKey } from "@/lib/data/questions";
 import type { RoomStatus } from "@/lib/game/rules";
 
-export type LeaderRow = { id: string; nickname: string; score: number; rank: number; change: number };
+export type LeaderRow = { id: string; nickname: string; score: number; rank: number; timeMs: number; answered: number; finishedAt: number | null };
+export type QuestionView = {
+  orderNumber: number;
+  category: string;
+  isFinalRound: boolean;
+  question?: string;
+  options?: { key: OptionKey; text: string }[];
+};
+type Base = { id: string; nickname: string; score: number; rank: number; starsLeft: number; timeMs: number };
+type Picked = { bet: number; star: boolean; answer: OptionKey | null };
+export type Me = Base &
+  (
+    | { phase: "DONE" }
+    | { phase: "BET"; question: QuestionView; allowedBets: number[] }
+    | ({ phase: "QUESTION"; question: QuestionView; deadline: number } & Picked)
+    | ({
+        phase: "RESULT";
+        question: QuestionView;
+        isCorrect: boolean;
+        scoreChange: number;
+        reveal: { correctAnswer: OptionKey; explanation: string; source: string; knowledgeSection: string };
+      } & Picked)
+  );
 export type RoomState = {
   serverNow: number;
   code: string;
   status: RoomStatus;
-  currentQuestion: number;
   total: number;
-  answerDeadlineAt: number | null;
   isHost: boolean;
-  question: {
-    orderNumber: number;
-    category: string;
-    isFinalRound: boolean;
-    question?: string;
-    options?: { key: OptionKey; text: string }[];
-  } | null;
-  reveal: { correctAnswer: OptionKey; explanation: string; source: string; knowledgeSection: string } | null;
-  counts: { players: number; spectators: number; bets: number; answers: number };
+  counts: { players: number; finished: number };
   leaderboard: LeaderRow[];
-  me: {
-    id: string;
-    nickname: string;
-    score: number;
-    isSpectator: boolean;
-    rank: number | null;
-    allowedBets: number[];
-    bet: number | null;
-    answer: OptionKey | null;
-    isCorrect: boolean | null;
-    scoreChange: number | null;
-  } | null;
+  me: Me | null;
 };
+
+export const formatTime = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 
 const PUSHER_KEY = process.env.NEXT_PUBLIC_PUSHER_KEY;
 
@@ -47,8 +50,8 @@ export function useRoom(code: string, asHost = false) {
   const refresh = useCallback(async () => {
     const res = await fetch(`/api/rooms/${code}`, { cache: "no-store" }).catch(() => null);
     if (!res) return;
-    const data = await res.json();
-    if (!res.ok) return setError(data.error);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return setError(data.error || "Lỗi máy chủ, thử tải lại trang");
     offset.current = data.serverNow - Date.now();
     setState(data);
     setError(null);
