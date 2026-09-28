@@ -37,7 +37,7 @@ const pusher =
       })
     : null;
 
-// Channel `room-CODE`: mọi người nghe. `host-CODE`: chỉ màn host (số người cược/trả lời) — tránh 30 client refetch mỗi lần có người cược.
+// Channel `room-CODE`: mọi người nghe. `host-CODE`: chỉ màn host (số người chọn điểm/trả lời) — tránh 30 client refetch mỗi lần có người chọn điểm.
 // ponytail: channel public thay vì private — payload không chứa dữ liệu nhạy cảm (chỉ tên event); thêm /api/pusher/auth nếu cần private.
 export async function notify(channel: `room-${string}` | `host-${string}`, event: string, data: object = {}) {
   if (!pusher) return; // không có Pusher → client tự polling

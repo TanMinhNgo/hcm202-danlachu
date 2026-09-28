@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { allowedBets, applyScore, isValidBet, rank, scoreChange } from "./rules.ts";
 
 assert.equal(applyScore(100, scoreChange(true, 20)), 120);
-assert.equal(scoreChange(false, 20), -10); // sai: trừ nửa cược
+assert.equal(scoreChange(false, 20), -10); // sai: trừ một nửa mức điểm đã chọn
 assert.equal(scoreChange(true, 30, true), 60); // ngôi sao: đúng x2
 assert.equal(scoreChange(false, 30, true), -60); // ngôi sao: sai trừ x2
 assert.equal(applyScore(10, scoreChange(false, 30, true)), 0); // không âm

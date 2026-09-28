@@ -49,11 +49,11 @@ const playerRoundSchema = new Schema(
     isCorrect: { type: Boolean, default: null },
     scoreChange: { type: Number, default: null },
     responseTimeMs: { type: Number, default: null },
-    shownAt: { type: Date, required: true }, // câu hỏi hiện ngay khi cược → mốc 15s của riêng người này
+    shownAt: { type: Date, required: true }, // câu hỏi hiện ngay khi chọn mức điểm → mốc 15s của riêng người này
   },
   { timestamps: true },
 );
-// Một bản ghi / người / câu → chặn cược & trả lời trùng.
+// Một bản ghi / người / câu → chặn chọn điểm & trả lời trùng.
 playerRoundSchema.index({ roomId: 1, playerId: 1, questionNumber: 1 }, { unique: true });
 playerRoundSchema.index({ roomId: 1, questionNumber: 1 });
 

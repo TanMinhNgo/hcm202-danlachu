@@ -1,0 +1,56 @@
+.page { background: #f8f5ed; color: #402226; }
+.hero { overflow: hidden; background: #402226; color: #fff; }
+.heroInner { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr); align-items: center; gap: 80px; max-width: 1180px; min-height: 550px; margin: auto; padding: 66px 28px; }
+.kicker { color: #e9c779; font-size: 13px; font-weight: 700; }
+.hero h1 { max-width: 730px; margin-top: 24px; font-size: clamp(2.6rem, 5vw, 5rem); font-weight: 700; letter-spacing: -.05em; line-height: 1.1; }
+.lead { max-width: 580px; margin-top: 24px; color: #eddfd2; font-size: 16px; line-height: 1.8; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.actions a { display: inline-flex; align-items: center; gap: 9px; padding: 13px 19px; border-radius: 9px; font-size: 14px; font-weight: 700; }
+.primary { background: #9f262c; color: white; }
+.primary:hover { background: #7b1d24; }
+.secondary { border: 1px solid #ffffff68; color: white; }
+.secondary:hover { background: #ffffff18; }
+.quote { position: relative; padding: 38px 0 12px 29px; border-left: 2px solid #c38d2b; }
+.quoteMark { position: absolute; top: -34px; left: 20px; color: #c38d2b; font-size: 100px; line-height: 1; }
+.quote blockquote { position: relative; font-size: clamp(19px, 2vw, 27px); font-weight: 600; line-height: 1.55; }
+.quote p { margin-top: 20px; color: #dec9b8; font-size: 12px; line-height: 1.5; }
+.chapters { max-width: 1180px; margin: 0 auto; padding: 75px 28px 85px; }
+.sectionIntro { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 30px; }
+.sectionIntro h2 { font-size: clamp(1.9rem, 3vw, 2.7rem); font-weight: 700; letter-spacing: -.04em; }
+.sectionIntro p { max-width: 490px; color: #675d57; font-size: 14px; line-height: 1.7; }
+.chapterGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.chapter { display: flex; flex-direction: column; min-height: 310px; padding: 28px; border: 1px solid #e3d7c5; border-top: 4px solid #9f262c; border-radius: 12px; background: #fffdf8; }
+.chapter:nth-child(2) { border-top-color: #356b68; }
+.chapter:nth-child(3) { border-top-color: #9c6a25; }
+.number { color: #8e2229; font-size: 13px; font-weight: 700; }
+.chapter:nth-child(2) .number { color: #356b68; }
+.chapter:nth-child(3) .number { color: #9c6a25; }
+.chapter h3 { margin-top: 20px; font-size: 22px; font-weight: 700; line-height: 1.3; }
+.chapter p { margin-top: 14px; color: #675d57; font-size: 14px; line-height: 1.75; }
+.chapterFoot { display: flex; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 25px; color: #8e2229; font-size: 12px; font-weight: 700; line-height: 1.5; }
+.chapter:hover { box-shadow: 0 12px 30px #40222610; }
+.nextStep { display: flex; align-items: center; justify-content: space-between; gap: 40px; max-width: 1124px; margin: 0 auto 80px; padding: 32px 36px; border: 1px solid #e3d7c5; border-radius: 14px; background: #f0e6d7; }
+.nextStep h2 { font-size: 23px; font-weight: 700; }
+.nextStep p { margin-top: 6px; color: #675d57; font-size: 14px; line-height: 1.6; }
+.nextLinks { display: flex; flex-wrap: wrap; gap: 11px; }
+.nextLinks a { padding: 11px 15px; border-radius: 8px; background: #402226; color: white; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.nextLinks a:last-child { background: #9f262c; }
+.page a:focus-visible { outline: 3px solid #c38d2b; outline-offset: 4px; }
+@media (max-width: 900px) {
+  .heroInner { grid-template-columns: 1fr; gap: 55px; min-height: 0; }
+  .quote { max-width: 650px; }
+  .sectionIntro, .nextStep { align-items: start; flex-direction: column; }
+  .chapterGrid { grid-template-columns: 1fr; }
+  .chapter { min-height: 0; }
+}
+@media (max-width: 600px) {
+  .heroInner { padding: 50px 18px 65px; }
+  .hero h1 { font-size: clamp(2.15rem, 10vw, 3rem); overflow-wrap: break-word; }
+  .lead { font-size: 15px; }
+  .chapters { padding: 50px 18px 55px; }
+  .nextStep { margin: 0 18px 55px; padding: 25px; }
+  .nextLinks { width: 100%; }
+  .nextLinks a { width: 100%; text-align: center; white-space: normal; }
+  .quote { padding-left: 20px; }
+  .quoteMark { left: 11px; }
+}
