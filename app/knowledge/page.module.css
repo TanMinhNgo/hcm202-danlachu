@@ -62,9 +62,9 @@
 }
 .sidebar {
   position: sticky;
-  top: 30px;
+  top: 106px;
   align-self: start;
-  max-height: calc(100vh - 60px);
+  max-height: calc(100vh - 136px);
   overflow-y: auto;
   padding-right: 15px;
   border-right: 1px solid #e3d7c5;
