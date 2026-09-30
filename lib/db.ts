@@ -37,6 +37,7 @@ const playerSchema = new Schema({
 });
 playerSchema.index({ roomId: 1, nickname: 1 }, { unique: true, collation: { locale: "vi", strength: 2 } });
 playerSchema.index({ roomId: 1, score: -1 });
+playerSchema.index({ sessionHash: 1 });
 
 const playerRoundSchema = new Schema(
   {

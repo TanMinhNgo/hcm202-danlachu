@@ -82,7 +82,7 @@ export function useRoom(code: string, asHost = false) {
   }, [code, asHost, refresh]);
 
   const serverNow = useCallback(() => Date.now() + offset.current, []);
-  return { state, error, refresh, serverNow };
+  return { state, setState, error, refresh, serverNow };
 }
 
 export async function post(url: string, body: object) {

@@ -22,6 +22,6 @@ export async function POST(req: Request) {
     { _id: player._id, current: player.current },
     { $inc: { current: 1 }, ...(last && { finishedAt: new Date() }) },
   );
-  await notify(`host-${code}`, "progress.changed");
+  notify(`host-${code}`, "progress.changed");
   return Response.json({ ok: true });
 }

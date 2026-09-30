@@ -9,7 +9,7 @@ import { formatTime, post, useCountdown, useRoom } from "./useRoom";
 import styles from "./arena.module.css";
 
 export function PlayerGameView({ code }: { code: string }) {
-  const { state, error, refresh, serverNow } = useRoom(code);
+  const { state, setState, error, refresh, serverNow } = useRoom(code);
   const me = state?.me;
   const left = useCountdown(me?.phase === "QUESTION" ? me.deadline : null, serverNow);
   const [busy, setBusy] = useState(false);
@@ -23,7 +23,13 @@ export function PlayerGameView({ code }: { code: string }) {
     setBusy(true);
     setMsg(null);
     try {
-      await post(url, { code, ...body });
+      const data = await post(url, { code, ...body });
+      // Server trả sẵn kết quả (answer) → hiện ngay, refetch nền chỉ để cập nhật hạng.
+      if (data.me) setState((s) => (s?.me ? { ...s, me: { ...s.me, ...data.me } } : s));
+      else await refresh();
+      setBusy(false);
+      if (data.me) void refresh();
+      return;
     } catch (e) {
       setMsg((e as Error).message);
     }

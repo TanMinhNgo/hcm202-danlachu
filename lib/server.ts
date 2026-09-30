@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import Pusher from "pusher";
 import { connectDB, Player, Room } from "./db";
 
@@ -39,13 +40,16 @@ const pusher =
 
 // Channel `room-CODE`: mọi người nghe. `host-CODE`: chỉ màn host (số người chọn điểm/trả lời) — tránh 30 client refetch mỗi lần có người chọn điểm.
 // ponytail: channel public thay vì private — payload không chứa dữ liệu nhạy cảm (chỉ tên event); thêm /api/pusher/auth nếu cần private.
-export async function notify(channel: `room-${string}` | `host-${string}`, event: string, data: object = {}) {
+// Gửi sau khi đã trả response (after) → không chặn người chơi chờ Pusher.
+export function notify(channel: `room-${string}` | `host-${string}`, event: string, data: object = {}) {
   if (!pusher) return; // không có Pusher → client tự polling
-  try {
-    await pusher.trigger(channel, event, data);
-  } catch (e) {
-    console.error("[pusher]", event, e); // mất 1 thông báo không mất dữ liệu: client vẫn polling dự phòng
-  }
+  after(async () => {
+    try {
+      await pusher.trigger(channel, event, data);
+    } catch (e) {
+      console.error("[pusher]", event, e); // mất 1 thông báo không mất dữ liệu: client vẫn polling dự phòng
+    }
+  });
 }
 
 // ---------- Helpers cho Route Handler ----------
@@ -56,10 +60,11 @@ export const normCode = (code: unknown) => (typeof code === "string" ? code.trim
 export async function loadPlayer(rawCode: unknown) {
   const code = normCode(rawCode);
   await connectDB();
-  const room = await Room.findOne({ code }).lean();
-  if (!room) return fail("Không tìm thấy phòng", 404);
   const h = await sessionHash(playerCookie(code));
-  const player = h ? await Player.findOne({ roomId: room._id, sessionHash: h }).lean() : null;
+  // Room và Player độc lập → chạy song song (1 round-trip thay vì 2); sessionHash là 256-bit ngẫu nhiên nên tự nó đã định danh, roomId kiểm tra sau.
+  const [room, found] = await Promise.all([Room.findOne({ code }).lean(), h ? Player.findOne({ sessionHash: h }).lean() : null]);
+  if (!room) return fail("Không tìm thấy phòng", 404);
+  const player = found && found.roomId.equals(room._id) ? found : null;
   if (!player) return fail("Bạn chưa tham gia phòng này", 401);
   if (room.status !== "PLAYING") return fail("Host chưa bắt đầu game", 409);
   return { code, room, player };

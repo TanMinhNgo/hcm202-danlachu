@@ -20,7 +20,8 @@ export async function POST(req: Request) {
 
   const elapsed = Date.now() - round.shownAt.getTime();
   const answer = elapsed <= LIMIT_MS + GRACE_MS ? body.answer : null; // trả lời trễ = hết giờ
-  const isCorrect = answer === getQuestion(String(room._id), player.current).correctAnswer;
+  const q = getQuestion(String(room._id), player.current);
+  const isCorrect = answer === q.correctAnswer;
   const change = scoreChange(isCorrect, round.bet!, round.star);
   const responseTimeMs = answer ? Math.min(elapsed, LIMIT_MS) : LIMIT_MS;
 
@@ -36,6 +37,21 @@ export async function POST(req: Request) {
     [{ $set: { score: { $max: [0, { $add: ["$score", change] }] }, timeMs: { $add: ["$timeMs", responseTimeMs] } } }],
     { updatePipeline: true },
   );
-  await notify(`host-${code}`, "leaderboard.changed");
-  return Response.json({ ok: true });
+  notify(`host-${code}`, "leaderboard.changed");
+  // Trả luôn kết quả để client hiện ngay, khỏi chờ refetch (hạng cập nhật ở lần refetch nền).
+  return Response.json({
+    ok: true,
+    me: {
+      phase: "RESULT",
+      score: Math.max(0, player.score + change),
+      timeMs: player.timeMs + responseTimeMs,
+      question: { orderNumber: q.orderNumber, category: q.category, isFinalRound: q.isFinalRound, question: q.question, options: q.options },
+      bet: round.bet,
+      star: round.star,
+      answer,
+      isCorrect,
+      scoreChange: change,
+      reveal: { correctAnswer: q.correctAnswer, explanation: q.explanation, source: q.source, knowledgeSection: q.knowledgeSection },
+    },
+  });
 }
